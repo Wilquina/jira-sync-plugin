@@ -1,0 +1,2 @@
+# jira-sync-plugin
+
