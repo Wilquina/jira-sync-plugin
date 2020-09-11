@@ -1,5 +1,7 @@
 package com.novomind.jira.model;
 
+import javax.annotation.Nonnull;
+
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 
 import com.novomind.jira.rest.JiraIssueUpdateModelDeserializer;
@@ -43,35 +45,39 @@ public class JiraIssueUpdateModel {
     this.timestamp = timestamp;
   }
 
+  @Nonnull
   public JiraIssue getJiraIssue() {
     return jiraIssue;
   }
 
-  public void setJiraIssue(JiraIssue jiraIssue) {
+  public void setJiraIssue(@Nonnull JiraIssue jiraIssue) {
     this.jiraIssue = jiraIssue;
   }
 
+  @Nonnull
   public JiraUser getJiraUser() {
     return jiraUser;
   }
 
-  public void setJiraUser(JiraUser jiraUser) {
+  public void setJiraUser(@Nonnull JiraUser jiraUser) {
     this.jiraUser = jiraUser;
   }
 
+  @Nonnull
   public JiraChangeLog getJiraChangeLog() {
     return jiraChangeLog;
   }
 
-  public void setJiraChangeLog(JiraChangeLog jiraChangeLog) {
+  public void setJiraChangeLog(@Nonnull JiraChangeLog jiraChangeLog) {
     this.jiraChangeLog = jiraChangeLog;
   }
 
+  @Nonnull
   public JiraComment getJiraComment() {
     return jiraComment;
   }
 
-  public void setJiraComment(JiraComment jiraComment) {
+  public void setJiraComment(@Nonnull JiraComment jiraComment) {
     this.jiraComment = jiraComment;
   }
 }

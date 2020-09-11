@@ -10,9 +10,11 @@ import org.codehaus.jackson.map.DeserializationContext;
 import org.codehaus.jackson.map.deser.std.StdDeserializer;
 
 import com.novomind.jira.model.JiraChangeLog;
+import com.novomind.jira.model.JiraComment;
 import com.novomind.jira.model.JiraIssue;
 import com.novomind.jira.model.JiraIssueHistoryItem;
 import com.novomind.jira.model.JiraIssueUpdateModel;
+import com.novomind.jira.model.JiraUser;
 
 public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueUpdateModel> {
 
@@ -34,7 +36,9 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
       jiraIssueUpdateModel.setId(root.id);
       jiraIssueUpdateModel.setTimestamp(root.timestamp);
       setJiraIssue(root, jiraIssueUpdateModel);
+      setJiraUser(root, jiraIssueUpdateModel);
       setJiraIssueHistoryItems(root, jiraIssueUpdateModel);
+      setJiraComment(root, jiraIssueUpdateModel);
     }
     return jiraIssueUpdateModel;
   }
@@ -47,6 +51,17 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
       jiraIssue.setKey(issue.key);
       jiraIssue.setLabels(issue.labels);
     }
+    jiraIssueUpdateModel.setJiraIssue(jiraIssue);
+  }
+
+  private void setJiraUser(Root root, JiraIssueUpdateModel jiraIssueUpdateModel) {
+    JiraUser jiraUser = new JiraUser();
+    User user = root.user;
+    if (user != null) {
+      jiraUser.setKey(user.key);
+      jiraUser.setName(user.name);
+    }
+    jiraIssueUpdateModel.setJiraUser(jiraUser);
   }
 
   private void setJiraIssueHistoryItems(Root root, JiraIssueUpdateModel jiraIssueUpdateModel) {
@@ -68,18 +83,35 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
     }
   }
 
+  private void setJiraComment(Root root, JiraIssueUpdateModel jiraIssueUpdateModel) {
+    JiraComment jiraComment = new JiraComment();
+    Comment comment = root.comment;
+    if (comment != null) {
+      jiraComment.setId(comment.id);
+      jiraComment.setBody(comment.body);
+    }
+    jiraIssueUpdateModel.setJiraComment(jiraComment);
+  }
+
   private static class Root {
     public String webhookEvent;
     public int id;
     public long timestamp;
     public Issue issue;
+    public User user;
     public Changelog changelog;
+    public Comment comment;
   }
 
   private static class Issue {
     public String id;
     public String key;
     public List<String> labels;
+  }
+
+  private static class User {
+    public String key;
+    public String name;
   }
 
   private static class Changelog {
@@ -90,5 +122,10 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
     public String field;
     public String fromString;
     public String toString;
+  }
+
+  private static class Comment {
+    public String id;
+    public String body;
   }
 }

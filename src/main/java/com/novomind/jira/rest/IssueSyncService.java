@@ -3,46 +3,35 @@ package com.novomind.jira.rest;
 import static org.codehaus.jackson.map.DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 import java.io.IOException;
-import java.util.Objects;
 
-import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.novomind.jira.crud.IssueUpdater;
-import com.novomind.jira.model.IssueSyncServiceModel;
 import com.novomind.jira.model.JiraIssueUpdateModel;
 
 @Path("/")
 @AnonymousAllowed
+@Named
 public class IssueSyncService {
 
-  @Nonnull
-  private final IssueUpdater issueUpdater;
+  private static final Logger LOG = LoggerFactory.getLogger(IssueSyncService.class);
 
-  public IssueSyncService(@Nonnull IssueUpdater issueUpdater) {
-    this.issueUpdater = Objects.requireNonNull(issueUpdater);
-  }
-
-  @GET
-  @Path("message/{key}")
-  @AnonymousAllowed
-  @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-  public Response getMessage(@PathParam("key") String key) {
-    return Response.ok(new IssueSyncServiceModel(issueUpdater.getUpdateValue(key))).build();
-  }
+  @Inject
+  private IssueUpdater issueUpdater;
 
   @POST
-  @Path("post")
+  @Path("notify")
   @AnonymousAllowed
   @Consumes(MediaType.APPLICATION_JSON)
   public Response notifyIssueChanges(String json) {
@@ -51,7 +40,7 @@ public class IssueSyncService {
           .configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
       issueUpdater.updateLinkedIssue(mapper.readValue(json, JiraIssueUpdateModel.class));
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("There was an error updating the issues", e);
       return Response.serverError().build();
     }
     return Response.ok().build();

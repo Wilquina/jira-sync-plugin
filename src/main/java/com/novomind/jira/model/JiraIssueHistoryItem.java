@@ -1,12 +1,6 @@
 package com.novomind.jira.model;
 
 import java.io.Serializable;
-import java.util.Objects;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class JiraIssueHistoryItem implements Serializable {
 
@@ -19,21 +13,6 @@ public class JiraIssueHistoryItem implements Serializable {
   private String toString;
 
   public JiraIssueHistoryItem() {
-  }
-
-  public JiraIssueHistoryItem(String field) {
-    this.field = field;
-  }
-
-  public JiraIssueHistoryItem(JiraField field) {
-    this(field.getFieldName());
-  }
-
-  public static JiraIssueHistoryItem createStatusTransition(String from, String to) {
-    JiraIssueHistoryItem statusTransition = new JiraIssueHistoryItem(JiraField.STATUS);
-    statusTransition.setFromString(from);
-    statusTransition.setToString(to);
-    return statusTransition;
   }
 
   public String getField() {
@@ -52,12 +31,6 @@ public class JiraIssueHistoryItem implements Serializable {
     this.fromString = fromString;
   }
 
-  @JsonIgnore
-  public JiraIssueHistoryItem withFromString(String from) {
-    setFromString(from);
-    return this;
-  }
-
   public String getToString() {
     return toString;
   }
@@ -66,37 +39,4 @@ public class JiraIssueHistoryItem implements Serializable {
     this.toString = toString;
   }
 
-  @JsonIgnore
-  public JiraIssueHistoryItem withToString(String to) {
-    setToString(to);
-    return this;
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-        .append("field", getField())
-        .append("fromString", getFromString())
-        .append("toString", getToString())
-        .toString();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    JiraIssueHistoryItem that = (JiraIssueHistoryItem) o;
-    return Objects.equals(getField(), that.getField())
-        && Objects.equals(getFromString(), that.getFromString())
-        && Objects.equals(getToString(), that.getToString());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getField(), getFromString(), getToString());
-  }
 }
