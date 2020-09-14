@@ -1,5 +1,6 @@
 package com.novomind.jira.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class JiraIssue extends JiraIdResource {
@@ -10,6 +11,7 @@ public class JiraIssue extends JiraIdResource {
   private List<String> labels;
 
   public JiraIssue() {
+    this.labels = new ArrayList<>();
   }
 
   public String getKey() {

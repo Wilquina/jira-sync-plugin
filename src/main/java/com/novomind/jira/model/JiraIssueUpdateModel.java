@@ -18,7 +18,10 @@ public class JiraIssueUpdateModel {
   private JiraComment jiraComment;
 
   public JiraIssueUpdateModel() {
-
+    this.jiraIssue = new JiraIssue();
+    this.jiraUser = new JiraUser();
+    this.jiraChangeLog = new JiraChangeLog();
+    this.jiraComment = new JiraComment();
   }
 
   public String getEvent() {

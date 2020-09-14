@@ -30,13 +30,30 @@ public class IssueDataWriter {
     updateField(destinationIssueId, user, issueInputParameters);
   }
 
+  public void updateIssueLabels(Long sourceIssueId, Long destinationIssueId, ApplicationUser user) {
+    // TODO Try to get the labels from the webhook JSON instead, need to find out how though
+    LabelManager labelManager = ComponentAccessor.getComponent(LabelManager.class);
+    MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(sourceIssueId);
+    if (issue != null && issue.getLabels() != null) {
+      issue.getLabels().forEach(
+          label -> labelManager.addLabel(user, destinationIssueId, label.getLabel(), false)
+      );
+    }
+  }
+
+  public void writeOrUpdateComment(Long destinationIssueId, String comment, ApplicationUser user) {
+    // TODO get the projectRole for which the comment should be added
+    MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(destinationIssueId);
+    ComponentAccessor.getCommentManager().create(issue, user, comment, false);
+  }
+
   private void updateField(Long destinationIssueId,
       ApplicationUser user,
       IssueInputParameters issueInputParameters) {
     IssueService.UpdateValidationResult updateValidationResult =
         IssueDataWriter.ISSUE_SERVICE.validateUpdate(user, destinationIssueId, issueInputParameters);
     if (updateValidationResult.isValid()) {
-      LOG.info("Update has been succesfully validated. Aplying update.");
+      LOG.info("Update has been successfully validated. Applying update.");
       IssueService.IssueResult updateResult = IssueDataWriter.ISSUE_SERVICE.update(user, updateValidationResult);
       if (!updateResult.isValid()) {
         LOG.warn("Update result was invalid.");
@@ -46,18 +63,5 @@ public class IssueDataWriter {
       updateValidationResult.getErrorCollection().getErrorMessages().forEach(LOG::error);
       updateValidationResult.getWarningCollection().getWarnings().forEach(LOG::warn);
     }
-  }
-
-  public void updateIssueLabels(Long sourceIssueId, Long destinationIssueId, ApplicationUser user) {
-    // TODO Try to get the labels from the webhook JSON instead, need to find out how though
-    LabelManager labelManager = ComponentAccessor.getComponent(LabelManager.class);
-    MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(sourceIssueId);
-    issue.getLabels().forEach(
-        label -> labelManager.addLabel(user, destinationIssueId, label.getLabel(), false)
-    );
-  }
-
-  public void writeOrUpdateComment() {
-
   }
 }

@@ -8,6 +8,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.DeserializationContext;
 import org.codehaus.jackson.map.deser.std.StdDeserializer;
+import org.joda.time.DateTime;
 
 import com.novomind.jira.model.JiraChangeLog;
 import com.novomind.jira.model.JiraComment;
@@ -89,6 +90,13 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
     if (comment != null) {
       jiraComment.setId(comment.id);
       jiraComment.setBody(comment.body);
+      jiraComment.setDateCreated(DateTime.parse(comment.created));
+      jiraComment.setDateUpdated(DateTime.parse(comment.updated));
+      Visibility visibility = comment.visibility;
+      if (visibility != null) {
+        jiraComment.setVisibilityType(visibility.type);
+        jiraComment.setVisibilityValue(visibility.value);
+      }
     }
     jiraIssueUpdateModel.setJiraComment(jiraComment);
   }
@@ -127,5 +135,13 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
   private static class Comment {
     public String id;
     public String body;
+    public String created;
+    public String updated;
+    public Visibility visibility;
+  }
+
+  private static class Visibility {
+    public String type;
+    public String value;
   }
 }

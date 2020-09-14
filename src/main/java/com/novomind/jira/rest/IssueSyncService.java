@@ -36,6 +36,7 @@ public class IssueSyncService {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response notifyIssueChanges(String json) {
     try {
+      LOG.error(json);
       ObjectMapper mapper = new ObjectMapper()
           .configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
       issueUpdater.updateLinkedIssue(mapper.readValue(json, JiraIssueUpdateModel.class));
