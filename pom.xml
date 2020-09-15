@@ -10,7 +10,7 @@
         <url>http://www.novomind.com/</url>
     </organization>
     <name>jira-sync-plugin</name>
-    <description>This a plugin for synchronizing 2 Jira issues</description>
+    <description>This a plugin for synchronizing Jira issues</description>
     <packaging>atlassian-plugin</packaging>
     <dependencies>
         <dependency>

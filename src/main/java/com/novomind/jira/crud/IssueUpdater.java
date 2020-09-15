@@ -5,7 +5,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,17 +36,16 @@ public class IssueUpdater {
               issueDataWriter.updateIssueSummary(destinationIssueId, item.getToString(), user);
             } else if ("description".equals(item.getField())) {
               issueDataWriter.updateIssueDescription(destinationIssueId, item.getToString(), user);
+            } else if ("resolution".equals(item.getField())) {
+              issueDataWriter.updateIssueResolution(destinationIssueId, item, user);
+            } else if ("status".equals(item.getField())) {
+              issueDataWriter.updateIssueResolution(destinationIssueId, item, user);
             }
           }
       );
     }
-
     issueDataWriter.updateIssueLabels(sourceIssueId, destinationIssueId, user);
-
-    String comment = jiraIssueUpdateModel.getJiraComment().getBody();
-    if (StringUtils.isNotBlank(comment)) {
-      issueDataWriter.writeOrUpdateComment(destinationIssueId, comment, user);
-    }
+    issueDataWriter.writeOrUpdateComment(destinationIssueId, jiraIssueUpdateModel.getJiraComment(), user);
   }
 
   private Long getLinkedIssueId(Long sourceIssueId) {

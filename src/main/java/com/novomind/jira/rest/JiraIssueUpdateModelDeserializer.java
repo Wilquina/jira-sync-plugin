@@ -76,6 +76,8 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
             jiraIssueHistoryItem.setField(item.field);
             jiraIssueHistoryItem.setFromString(item.fromString);
             jiraIssueHistoryItem.setToString(item.toString);
+            jiraIssueHistoryItem.setFrom(item.from);
+            jiraIssueHistoryItem.setTo(item.to);
             jiraIssueHistoryItems.add(jiraIssueHistoryItem);
           }
       );
@@ -130,6 +132,8 @@ public class JiraIssueUpdateModelDeserializer extends StdDeserializer<JiraIssueU
     public String field;
     public String fromString;
     public String toString;
+    public String from;
+    public String to;
   }
 
   private static class Comment {

@@ -7,10 +7,10 @@ public class JiraIssueHistoryItem implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private String field;
-
   private String fromString;
-
   private String toString;
+  private String from;
+  private String to;
 
   public JiraIssueHistoryItem() {
   }
@@ -39,4 +39,19 @@ public class JiraIssueHistoryItem implements Serializable {
     this.toString = toString;
   }
 
+  public String getFrom() {
+    return from;
+  }
+
+  public void setFrom(String from) {
+    this.from = from;
+  }
+
+  public String getTo() {
+    return to;
+  }
+
+  public void setTo(String to) {
+    this.to = to;
+  }
 }
