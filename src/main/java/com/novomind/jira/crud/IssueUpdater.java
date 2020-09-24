@@ -27,24 +27,26 @@ public class IssueUpdater {
   public void updateLinkedIssue(JiraIssueUpdateModel jiraIssueUpdateModel) {
     Long sourceIssueId = NumberUtils.toLong(jiraIssueUpdateModel.getJiraIssue().getId(), 0L);
     Long destinationIssueId = getLinkedIssueId(sourceIssueId);
-    ApplicationUser user = ComponentAccessor.getUserManager().getUserByKey(jiraIssueUpdateModel.getJiraUser().getKey());
+    ApplicationUser loggedInuser = ComponentAccessor.getUserManager().getUserByKey(jiraIssueUpdateModel.getJiraUser().getKey());
+    ApplicationUser user = ComponentAccessor.getUserManager().getUserByKey("cschiess");
     List<JiraIssueHistoryItem> items = jiraIssueUpdateModel.getJiraChangeLog().getItems();
     if (!items.isEmpty()) {
       items.forEach(
           item -> {
-            if ("summary".equals(item.getField())) {
+            String field = item.getField();
+            if ("summary".equals(field)) {
               issueDataWriter.updateIssueSummary(destinationIssueId, item.getToString(), user);
-            } else if ("description".equals(item.getField())) {
+            } else if ("description".equals(field)) {
               issueDataWriter.updateIssueDescription(destinationIssueId, item.getToString(), user);
-            } else if ("resolution".equals(item.getField())) {
+            } else if ("resolution".equals(field)) {
               issueDataWriter.updateIssueResolution(destinationIssueId, item, user);
-            } else if ("status".equals(item.getField())) {
-              issueDataWriter.updateIssueResolution(destinationIssueId, item, user);
+            } else if ("status".equals(field)) {
+              issueDataWriter.updateIssueStatus(destinationIssueId, item, user);
             }
           }
       );
     }
-    issueDataWriter.updateIssueLabels(sourceIssueId, destinationIssueId, user);
+    issueDataWriter.updateIssueLabels(sourceIssueId, destinationIssueId, loggedInuser);
     issueDataWriter.writeOrUpdateComment(destinationIssueId, jiraIssueUpdateModel.getJiraComment(), user);
   }
 

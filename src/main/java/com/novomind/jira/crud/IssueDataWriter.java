@@ -1,5 +1,8 @@
 package com.novomind.jira.crud;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.inject.Named;
 
 import org.apache.commons.lang3.StringUtils;
@@ -9,10 +12,13 @@ import org.slf4j.LoggerFactory;
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.IssueInputParameters;
+import com.atlassian.jira.issue.IssueManager;
 import com.atlassian.jira.issue.MutableIssue;
 import com.atlassian.jira.issue.comments.Comment;
 import com.atlassian.jira.issue.comments.CommentManager;
+import com.atlassian.jira.issue.label.Label;
 import com.atlassian.jira.issue.label.LabelManager;
+import com.atlassian.jira.project.Project;
 import com.atlassian.jira.user.ApplicationUser;
 import com.novomind.jira.model.JiraComment;
 import com.novomind.jira.model.JiraIssueHistoryItem;
@@ -22,6 +28,7 @@ public class IssueDataWriter {
 
   private static final Logger LOG = LoggerFactory.getLogger(IssueDataWriter.class);
   public static final IssueService ISSUE_SERVICE = ComponentAccessor.getIssueService();
+  public static final IssueManager ISSUE_MANAGER = ComponentAccessor.getIssueManager();
   public static final CommentManager COMMENT_MANAGER = ComponentAccessor.getCommentManager();
 
   public void updateIssueSummary(Long destinationIssueId, String newSummary, ApplicationUser user) {
@@ -43,6 +50,8 @@ public class IssueDataWriter {
       IssueInputParameters issueInputParameters = ISSUE_SERVICE.newIssueInputParameters();
       issueInputParameters.setResolutionId(to);
       updateField(destinationIssueId, user, issueInputParameters);
+    } else {
+      LOG.error("No resolution updated");
     }
   }
 
@@ -53,24 +62,39 @@ public class IssueDataWriter {
       IssueInputParameters issueInputParameters = ISSUE_SERVICE.newIssueInputParameters();
       issueInputParameters.setStatusId(to);
       updateField(destinationIssueId, user, issueInputParameters);
+    } else {
+      LOG.error("No status updated");
     }
   }
 
-  public void updateIssueLabels(Long sourceIssueId, Long destinationIssueId, ApplicationUser user) {
+  public void updateIssueLabels(Long sourceIssueId,
+      Long destinationIssueId,
+      ApplicationUser user) {
     // TODO Try to get the labels from the webhook JSON instead, need to find out how though
     LabelManager labelManager = ComponentAccessor.getComponent(LabelManager.class);
-    MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(sourceIssueId);
+    MutableIssue issue = ISSUE_MANAGER.getIssueObject(sourceIssueId);
+    Set<String> labels = new HashSet<>();
     if (issue != null && issue.getLabels() != null) {
-      issue.getLabels().forEach(
-          label -> labelManager.addLabel(user, destinationIssueId, label.getLabel(), false)
-      );
+      IssueService.IssueResult issueResult = null;
+      for (Label label : issue.getLabels()) {
+        if (label.getLabel().equals("clone-to-isbo")) {
+          issueResult = cloneIssue(sourceIssueId, user);
+        } else {
+          labels.add(label.getLabel());
+        }
+      }
+      if (issueResult != null) {
+        destinationIssueId = issueResult.getIssue().getId();
+      }
+      labelManager.setLabels(user, sourceIssueId, labels, false, false);
+      labelManager.setLabels(user, destinationIssueId, labels, false, false);
     }
   }
 
   public void writeOrUpdateComment(Long destinationIssueId, JiraComment jiraComment, ApplicationUser user) {
     String commentBody = jiraComment.getBody();
     if (StringUtils.isNotBlank(commentBody)) {
-      MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(destinationIssueId);
+      MutableIssue issue = ISSUE_MANAGER.getIssueObject(destinationIssueId);
       // If the created date is equal to the updated date, then the comment was just created, else it was updated
       Comment comment = COMMENT_MANAGER.getCommentById(Long.valueOf(jiraComment.getId()));
       if (jiraComment.getDateCreated().compareTo(jiraComment.getDateUpdated()) == 0) {
@@ -82,6 +106,32 @@ public class IssueDataWriter {
     }
   }
 
+  private IssueService.IssueResult cloneIssue(Long sourceIssueId, ApplicationUser user) {
+    ComponentAccessor.getJiraAuthenticationContext().setLoggedInUser(user);
+    ApplicationUser loggedInUser = ComponentAccessor.getJiraAuthenticationContext().getLoggedInUser();
+    MutableIssue issue = ISSUE_MANAGER.getIssueObject(sourceIssueId);
+    IssueInputParameters issueInputParameters = ISSUE_SERVICE.newIssueInputParameters();
+    Project project = ComponentAccessor.getProjectManager().getProjectByCurrentKey("DP");
+    issueInputParameters.setSummary(issue.getSummary())
+        .setDescription(issue.getDescription())
+        .setAssigneeId(loggedInUser.getName())
+        .setReporterId(loggedInUser.getName())
+        .setProjectId(project.getId())
+        .setIssueTypeId(StringUtils.isNotBlank(issue.getIssueTypeId()) ? issue.getIssueTypeId() : "10000");
+
+    IssueService.CreateValidationResult result = ISSUE_SERVICE.validateCreate(user, issueInputParameters);
+    IssueService.IssueResult issueResult = null;
+    if (result.isValid()) {
+      issueResult = ISSUE_SERVICE.create(user, result);
+    } else if (result.getErrorCollection().hasAnyErrors()) {
+      LOG.error("There were errors validating the issue creation");
+      result.getErrorCollection().getErrors().forEach(LOG::error);
+      result.getErrorCollection().getErrorMessages().forEach(LOG::error);
+      result.getErrorCollection().getReasons().forEach(reason -> LOG.error(reason.toString() + " " + reason.getHttpStatusCode()));
+    }
+    return issueResult;
+  }
+
   private void updateField(Long destinationIssueId,
       ApplicationUser user,
       IssueInputParameters issueInputParameters) {
@@ -91,10 +141,10 @@ public class IssueDataWriter {
       LOG.info("Update has been successfully validated. Applying update.");
       IssueService.IssueResult updateResult = IssueDataWriter.ISSUE_SERVICE.update(user, updateValidationResult);
       if (!updateResult.isValid()) {
-        LOG.warn("Update result was invalid.");
+        LOG.error("Update result was invalid.");
       }
     } else {
-      LOG.warn("Update validation was unsuccessful.");
+      LOG.error("Update validation was unsuccessful.");
       updateValidationResult.getErrorCollection().getErrorMessages().forEach(LOG::error);
       updateValidationResult.getWarningCollection().getWarnings().forEach(LOG::warn);
     }
